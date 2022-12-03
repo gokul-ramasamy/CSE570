@@ -4,6 +4,7 @@ from data import DataLoader
 from models import create_model
 from util.writer import Writer
 from test import run_test
+import os,sys,humanize,psutil,GPUtil
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()
@@ -15,12 +16,27 @@ if __name__ == '__main__':
     writer = Writer(opt)
     total_steps = 0
 
+    # Import packages
+    
+
+    # Define function
+    def mem_report():
+        print("CPU RAM Free: " + humanize.naturalsize( psutil.virtual_memory().available ))
+        
+        GPUs = GPUtil.getGPUs()
+        for i, gpu in enumerate(GPUs):
+            print('GPU {:d} ... Mem Free: {:.0f}MB / {:.0f}MB | Utilization {:3.0f}%'.format(i, gpu.memoryFree, gpu.memoryTotal, gpu.memoryUtil*100))
+    
+    mem_report() # Memory usage after loading the model
+
     for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         epoch_start_time = time.time()
         iter_data_time = time.time()
         epoch_iter = 0
 
+
         for i, data in enumerate(dataset):
+            mem_report() # Memory usage after loading the dataset
             iter_start_time = time.time()
             if total_steps % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
