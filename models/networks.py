@@ -130,26 +130,26 @@ class MeshConvNet(nn.Module):
         self.k = [nf0] + conv_res
         self.res = [input_res] + pool_res
         norm_args = get_norm_args(norm_layer, self.k[1:])
-
+####### changes made to remove pool layer     ##############
         for i, ki in enumerate(self.k[:-1]):
             setattr(self, 'conv{}'.format(i), MResConv(ki, self.k[i + 1], nresblocks))
             setattr(self, 'norm{}'.format(i), norm_layer(**norm_args[i]))
             setattr(self, 'pool{}'.format(i), MeshPool(self.res[i + 1]))
 
 
-        self.gp = torch.nn.AvgPool1d(self.res[-1])
+        #self.gp = torch.nn.AvgPool1d(self.res[-1]) # we comment this and use torch.mean
         # self.gp = torch.nn.MaxPool1d(self.res[-1])
         self.fc1 = nn.Linear(self.k[-1], fc_n)
         self.fc2 = nn.Linear(fc_n, nclasses)
 
     def forward(self, x, mesh):
-
         for i in range(len(self.k) - 1):
             x = getattr(self, 'conv{}'.format(i))(x, mesh)
             x = F.relu(getattr(self, 'norm{}'.format(i))(x))
-            x = getattr(self, 'pool{}'.format(i))(x, mesh)
-
-        x = self.gp(x)
+            #x = getattr(self, 'pool{}'.format(i))(x, mesh) #we comment this line as it calls out MeshPool
+        x=torch.mean(x,-1) # written to collapse the last dimension whose size was 1
+        x=torch.mean(x,-1) # written in replacement of self.gp
+        #x = self.gp(x)    #commented self.gp as it takes size of the last pooling layer
         x = x.view(-1, self.k[-1])
 
         x = F.relu(self.fc1(x))
