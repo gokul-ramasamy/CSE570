@@ -306,6 +306,23 @@ def set_edge_lengths(mesh, edge_points=None):
     edge_lengths = np.linalg.norm(mesh.vs[edge_points[:, 0]] - mesh.vs[edge_points[:, 1]], ord=2, axis=1)
     mesh.edge_lengths = edge_lengths
 
+# Changes made here -- to extract the midpoints as features
+def midpoint(mesh, edge_points):
+    # edge_points --> (750, 4)
+    # Get vertex 1 matrix
+    vertex1_ids = edge_points[:, 0]
+    vertex1 = mesh.vs[vertex1_ids]
+    # Get vertex 2 matrix
+    vertex2_ids = edge_points[:, 1]
+    vertex2 = mesh.vs[vertex2_ids]
+    # Average the two matrix and return the same --> (3, 750)
+    midpoints = (vertex1+vertex2)/2
+    # midpoints = midpoints.astype(float)
+
+    # zero_pad = np.zeros((750, 2))
+    # midpoints = np.concatenate([midpoints, zero_pad], axis=1)
+
+    return midpoints.T
 
 def extract_features(mesh):
     features = []
@@ -313,7 +330,8 @@ def extract_features(mesh):
     set_edge_lengths(mesh, edge_points)
     with np.errstate(divide='raise'):
         try:
-            for extractor in [dihedral_angle, symmetric_opposite_angles, symmetric_ratios]:
+            # for extractor in [dihedral_angle, symmetric_opposite_angles, symmetric_ratios]:
+            for extractor in [midpoint]:
                 feature = extractor(mesh, edge_points)
                 features.append(feature)
             return np.concatenate(features, axis=0)
